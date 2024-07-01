@@ -12,13 +12,10 @@ This repository contains code for a Lidar Odometry project, focusing to calculat
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Setup](#setup)
-    - [CMake](#cmake)
   - [Data Loading](#data-loading)
-    - [`LaserScanDataset` Class](#laserscandataset-class)
   - [Data Visualization](#data-visualization)
   - [Next Steps](#next-steps)
-  - [Author](#author)
-  - [COntributors](#contributors)
+
 
 
 ## Introduction
@@ -49,7 +46,7 @@ The `LaserScanDataset` class loads `.bin` files containing 2D point cloud data. 
 ```
 ./build/main data
 ```
-Intial 2D lidar dat will look as (ScreenCapture_2024-07-01-15-47-21.png and ScreenCapture_2024-07-01-15-37-39.png)
+Intial 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
 
 
 ## Next Steps
@@ -62,7 +59,7 @@ Intial 2D lidar dat will look as (ScreenCapture_2024-07-01-15-47-21.png and Scre
 - GitHub: [Your GitHub Profile](https://github.com/prasanna1511)
 
 
-## COntributors
+## Contributors
 
 - tizianoGuadagnino
 - saurabh1002
