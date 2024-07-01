@@ -1,0 +1,9 @@
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/CMakeFiles/rebuild_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/CMakeFiles/edit_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/CMakeFiles/main.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/dataloader/CMakeFiles/rebuild_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/dataloader/CMakeFiles/edit_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/dataloader/CMakeFiles/dataloader.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/viewer/CMakeFiles/rebuild_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/viewer/CMakeFiles/edit_cache.dir
+/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/viewer/CMakeFiles/viewer.dir

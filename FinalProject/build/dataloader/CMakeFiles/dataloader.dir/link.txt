@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdataloader.a  CMakeFiles/dataloader.dir/dataloader.cpp.o
+/usr/bin/ranlib libdataloader.a

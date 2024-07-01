@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build",
+  "command": "/usr/bin/c++  -DFMT_HEADER_ONLY=0 -DFMT_STRING_ALIAS=1 -DFMT_USE_WINDOWS_H=0 -D_GLIBCXX_USE_CXX11_ABI=1 -I\"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/dataloader/..\" -I\"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/viewer/..\" -isystem /usr/include/eigen3 -isystem \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/Open3D/include\" -isystem \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/Open3D/include/open3d/3rdparty\"    -std=gnu++17 -o CMakeFiles/main.dir/main.cpp.o -c \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/main.cpp\"",
+  "file": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/main.cpp"
+},
+{
+  "directory": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/dataloader",
+  "command": "/usr/bin/c++   -I\"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/dataloader/..\" -isystem /usr/include/eigen3    -std=gnu++17 -o CMakeFiles/dataloader.dir/dataloader.cpp.o -c \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/dataloader/dataloader.cpp\"",
+  "file": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/dataloader/dataloader.cpp"
+},
+{
+  "directory": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/build/viewer",
+  "command": "/usr/bin/c++  -DFMT_HEADER_ONLY=0 -DFMT_STRING_ALIAS=1 -DFMT_USE_WINDOWS_H=0 -D_GLIBCXX_USE_CXX11_ABI=1 -I\"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/viewer/..\" -isystem \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/Open3D/include\" -isystem \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/Open3D/include/open3d/3rdparty\"    -o CMakeFiles/viewer.dir/viewer.cpp.o -c \"/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/viewer/viewer.cpp\"",
+  "file": "/home/prasanna/Desktop/c/modern-cpp-2024-project-main (1)/viewer/viewer.cpp"
+}
+]
