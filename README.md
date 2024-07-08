@@ -51,7 +51,12 @@ Intial 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://gi
 
 ## Next Steps
 
-- To calculate motion by indentation and pose by aggregation
+- Transform(calculate rotation and translation) points and use it for next scan
+- Find adjacent voxels
+- Calculate the k-nearest neighbour
+- Registrtion
+- Align with the Map
+- Check if it is similar to the scanned environment
 
 ## Author
 
