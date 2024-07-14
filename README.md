@@ -2,8 +2,6 @@
 
 
 
-# Lidar Odometry Project
-
 This repository contains code for a Lidar Odometry project, focusing to calculate motion by indentation and pose by aggregation from the given laser scan data.
 
 ## Table of Contents
