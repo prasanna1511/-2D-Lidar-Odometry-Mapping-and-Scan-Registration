@@ -58,4 +58,8 @@ LaserScanDataset::LaserScanDataset(const std::string &data_root_dir) {
 LaserScanDataset::PointCloud LaserScanDataset::operator[](int idx) const {
   return ReadLaserScan(laser_scan_files_[idx]);
 }
+
+
+
 } // namespace dataset
+
