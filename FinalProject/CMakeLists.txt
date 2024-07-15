@@ -1,13 +1,7 @@
-cmake_minimum_required(VERSION 3.16)
-PROJECT(lidar_odometry)
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+add_library(icp STATIC icp.cpp)
 
-find_package(Eigen3 REQUIRED)
-find_package(Open3D REQUIRED HINTS ${PROJECT_SOURCE_DIR}/Open3D/lib/cmake)
-
-add_subdirectory(dataloader)
-add_subdirectory(viewer)
-
-
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE dataloader viewer Eigen3::Eigen Open3D::Open3D)
+target_sources(icp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/icp.cpp)
+target_compile_features(icp PUBLIC cxx_std_17)
+target_include_directories(icp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+target_link_libraries(icp PUBLIC Eigen3::Eigen)
+target_link_libraries(icp PUBLIC Open3D::Open3D)
