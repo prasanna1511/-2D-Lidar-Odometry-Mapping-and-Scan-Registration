@@ -1,28 +1,48 @@
 #include "icp/icp.hpp"
-#include <algorithm>
+#include <unordered_map>
+#include <cmath>
+#include <fstream>
 #include <iostream>
-#include <open3d/Open3D.h>
-#include <open3d/core/ShapeUtil.h>
-#include <utility>
-#include <vector>
 
 
-
-std::vector<Eigen::Matrix3d> Transformations(const std::vector<Eigen::Vector2d> &pointcloud){
-    std::vector<Eigen::Matrix3d> transformations;
-    transformations.reserve(pointcloud.size()-1);
-
-for (size_t i=1; i<pointcloud.size(); i++){
-    double dx = pointcloud[i].x() - pointcloud[i-1].x();
-    double dy = pointcloud[i].y() - pointcloud[i-1].y();
-    double theta = std::atan2(dy, dx);
-
-    Eigen::Matrix3d T = Eigen::Matrix3d::Identity();
-    T.block<2,2>(0,0) << std::cos(theta), -std::sin(theta), std::sin(theta), std::cos(theta);
-    T.block<2,1>(0,2) << dx, dy;
-
-    transformations.push_back(T);
+Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &points){
+    Eigen::Vector2d centroid;
+    for (const auto &point : points) {
+        centroid += point;
+    }
+    return centroid / points.size();
 
 }
-return transformations;
+
+Eigen::Vector2d covariance(const std::vector<Eigen::Vector2d> &source_points, 
+                            const Eigen::Vector2d &source_mean, 
+                           const std::vector<Eigen::Vector2d> &target_points, 
+                           const Eigen::Vector2d &target_mean){
+    Eigen::Vector2d covariance;
+    for (std::size_t i = 0; i < source_points.size(); ++i) {
+        covariance += (source_points[i] - source_mean).cwiseProduct(target_points[i] - target_mean);
+        covariance = covariance / source_points.size();
+                           }
+    return covariance;
 }
+
+
+Eigen::Matrix3d save_transformation(const Eigen::Matrix3d &old_transform, 
+                                    const Eigen::Matrix3d &new_transform){
+    return new_transform * old_transform;
+                                    }
+
+
+double error(const std::vector<Eigen::Vector2d> &source_points, 
+            const std::vector<Eigen::Vector2d> &target_points, 
+            const Eigen::Matrix3d &transform){
+    double error = 0.0;
+    for (std::size_t i = 0; i < source_points.size(); ++i) {
+        Eigen::Vector3d source_point = transform * Eigen::Vector3d(source_points[i].x(), source_points[i].y(), 1.0);
+        error += (source_point.head<2>() - target_points[i]).squaredNorm();
+            }
+    return error;
+}
+
+
+
