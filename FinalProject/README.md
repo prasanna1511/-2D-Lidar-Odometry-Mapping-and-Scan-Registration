@@ -29,7 +29,7 @@ To run this project, you will need:
 ```
 ./build/main data
 ```
-Intial 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
+first scan of 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
 
 
 
