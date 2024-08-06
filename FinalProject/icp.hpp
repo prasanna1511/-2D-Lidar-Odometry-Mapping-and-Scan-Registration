@@ -9,30 +9,36 @@
 
 
 namespace icp {
+
 using PointCloud = std::vector<Eigen::Vector2d>;
 
-struct ICPResult{
-    std::vector<Eigen::Matrix3d> transformations;
-    std::vector<Eigen::Vector2d> final_pcd;
+struct Pixel {
+    int x, y;
+    Pixel(int x_, int y_) : x(x_), y(y_) {}
+    bool operator==(const Pixel &other) const {
+        return x == other.x && y == other.y;
+    }
 };
 
-std::vector<Eigen::Vector2d> DownSample(const PointCloud &pcd, double voxel_size);
+struct PixelHash {
+    std::size_t operator()(const Pixel &p) const {
+        return std::hash<int>()(p.x) ^ std::hash<int>()(p.y);
+    }
+};
 
-int nearestNeigbour(const Eigen::Vector2d &point, const PointCloud &ref_pcd);
+std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> GridMap(const std::vector<Eigen::Vector2d> &coords, double pixel_size);
+std::vector<Eigen::Vector2d> downsample(const std::vector<Eigen::Vector2d> &coords, double voxel_size);
+std::tuple<std::vector<Eigen::Vector2d>, std::vector<Eigen::Vector2d>> nearestNeighbor(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target);
+Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &coords);
+Eigen::Matrix2d Covariance(const PointCloud &source, const PointCloud &target);
+Eigen::Matrix2d R(const Eigen::Matrix2d &cov);
+Eigen::Matrix3d icp_known_correspondence(const std::vector<Eigen::Vector2d> &s_correspondences, const std::vector<Eigen::Vector2d> &t_correspondences);
+Eigen::Matrix3d ApplyTransformation(PointCloud &source, const PointCloud &target);
+double Error(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target, const Eigen::Matrix3d &T);
+Eigen::MatrixXd Jacobian(const Eigen::Vector2d &p, const Eigen::Vector2d &q, const Eigen::Matrix3d &T);
 
-Eigen::Vector2d Mean(const PointCloud &pcd);
+} // namespace icp
 
-std::vector<Eigen::Vector2d> substractMean(const PointCloud &pcd, const Eigen::Vector2d &mean);
-
-Eigen::Matrix2d Covariance(const std::vector<Eigen::Matrix<double, 2, 1>>& p_prime, const std::vector<Eigen::Matrix<double, 2, 1>>& q_prime);
-
-Eigen::Matrix2d R(const Eigen::Matrix2d &covariance);
-
-Eigen::Vector2d t(const Eigen::Vector2d &mean_pcd, const Eigen::Vector2d &mean_ref_pcd, const Eigen::Matrix2d &R);
-
-Eigen::Matrix3d ApplyTransformation(const Eigen::Matrix2d &R, const Eigen::Vector2d &t);
-
-ICPResult icp(const std::vector<Eigen::Vector2d> &pcds, double voxel_size, int max_iter, double tolerance);
 
 
 }// namespace icp
