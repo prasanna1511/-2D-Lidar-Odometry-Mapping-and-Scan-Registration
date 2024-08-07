@@ -7,7 +7,7 @@ This repository contains code for a Lidar Odometry project, focusing to calculat
 ## Table of Contents
 
 - [Lidar Odometry Project](#lidar-odometry-project)
-  - [Table of Contents](#table-of-contents)
+
   - [Introduction](#introduction)
   - [Setup](#setup)
   - [ICP-Registartion](#icp)
@@ -17,7 +17,7 @@ This repository contains code for a Lidar Odometry project, focusing to calculat
 
 ## Introduction
 
-This project aims to implement 2D Lidar Odometry using C++. Lidar data is stored in binary files (.bin).
+This project aims to 2D Odometry map 
 
 ## Setup
 
