@@ -58,11 +58,3 @@ Intial 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://gi
 
 - Prasanna.Bijja
 - GitHub: [Your GitHub Profile](https://github.com/prasanna1511)
-
-
-## Contributors
-
-- tizianoGuadagnino
-- saurabh1002
-
----
