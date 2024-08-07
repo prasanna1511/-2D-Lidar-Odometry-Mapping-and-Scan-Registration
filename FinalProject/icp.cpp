@@ -15,12 +15,12 @@ std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> GridMap(const
 }
 
 std::vector<Eigen::Vector2d> downsample(const std::vector<Eigen::Vector2d> &coords, double voxel_size) {
-    std::unordered_map<int, Eigen::Vector2d> downSample_map;
+    std::unordered_map<Pixel, Eigen::Vector2d, PixelHash> downSample_map;
     for (const auto &coord : coords) {
         int x = std::floor(coord.x() / voxel_size);
         int y = std::floor(coord.y() / voxel_size);
-        int key = x * 73856093 + y * 19349663;
-        downSample_map[key] = coord;
+        Pixel p(x, y);
+        downSample_map[p] = coord;
     }
     std::vector<Eigen::Vector2d> downsampled_coords;
     for (const auto &entry : downSample_map) {
@@ -93,37 +93,67 @@ Eigen::Matrix3d icp_known_correspondence(const std::vector<Eigen::Vector2d> &s_c
     return T;
 }
 
-Eigen::Matrix3d ApplyTransformation(PointCloud &source, const PointCloud &target) {
-    auto [nearneigh_source, nearneigh_target] = nearestNeighbor(source, target);
-    std::cout << "correspondences: " << nearneigh_source.size() << std::endl;
+Eigen::Matrix3d icp_unknown_correspondence(const std::vector<Eigen::Vector2d> &src_, const std::vector<Eigen::Vector2d> &target, const double &pixel_size) {
+    int max_iterations = 50;
+    int iter = 0;
+    double old_err = INFINITY;
 
-    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(3, 3);
-    Eigen::VectorXd b = Eigen::VectorXd::Zero(3);
+    std::vector<Eigen::Vector2d> src = src_;
+    Eigen::Matrix3d T = Eigen::Matrix3d::Identity();
+    Eigen::Matrix3d t = Eigen::Matrix3d::Identity();
 
-    for (size_t i = 0; i < nearneigh_source.size(); ++i) {
-        Eigen::Vector2d p = nearneigh_source[i];
-        Eigen::Vector2d q = nearneigh_target[i];
-        Eigen::Vector2d rp = p;  // Rotation identity, for the first iteration
+    std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> target_grid = GridMap(target, pixel_size);
 
-        Eigen::Vector2d e = rp - q;
-        Eigen::MatrixXd J = Jacobian(p, q, Eigen::Matrix3d::Identity());
+    while (true) {
+        iter++;
+        auto [s_correspondences, t_correspondences] = nearestNeighbor(src, target);
+        t = icp_known_correspondence(s_correspondences, t_correspondences);
 
-        H += J.transpose() * J;
-        b += J.transpose() * e;
+        if (iter == 1) {
+            T = t;
+        } else {
+            T = t * T;
+        }
+
+        src = apply_transformation(t, src);
+
+        double err = Error(src, target, t);
+        if (iter == max_iterations || err == old_err) {
+            break;
+        }
+
+        old_err = err;
+
+        // Clear the correspondences
+        s_correspondences.clear();
+        t_correspondences.clear();
     }
 
-    Eigen::Vector3d delta_x = -H.inverse() * b;
+    // Apply final transformation to the entire target scan and extract x, y points
+    std::vector<Eigen::Vector2d> transformed_points = apply_transformation(T, target);
 
-    Eigen::Matrix3d T_delta;
-    T_delta << cos(delta_x(2)), -sin(delta_x(2)), delta_x(0),
-               sin(delta_x(2)), cos(delta_x(2)), delta_x(1),
-               0, 0, 1;
+    // Clear transformed points after appending to cumulative pointcloud
+    transformed_points.clear();
 
-    for (auto &point : source) {
-        point = (T_delta * Eigen::Vector3d(point.x(), point.y(), 1.0)).hnormalized();
+    return T;
+}
+
+std::vector<Eigen::Vector2d> apply_transformation(const Eigen::Matrix3d &transformation, const std::vector<Eigen::Vector2d> &src) {
+    std::vector<Eigen::Vector2d> transformed_points;
+    Eigen::Matrix2d R = transformation.block<2, 2>(0, 0);
+    Eigen::Vector2d t = transformation.block<2, 1>(0, 2);
+
+    for (const auto &point : src) {
+        transformed_points.emplace_back(R * point + t);
     }
 
-    return T_delta;
+    return transformed_points;
+}
+
+std::vector<Eigen::Vector2d> concat_pointclouds(std::vector<Eigen::Vector2d> &first, const std::vector<Eigen::Vector2d> &second) {
+    std::vector<Eigen::Vector2d> result = first;
+    result.insert(result.end(), second.begin(), second.end());
+    return result;
 }
 
 double Error(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target, const Eigen::Matrix3d &T) {
