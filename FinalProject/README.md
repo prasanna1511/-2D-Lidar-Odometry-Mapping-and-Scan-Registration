@@ -1,43 +1,65 @@
-### Modern C++ 2024 Final Project: 2D Lidar odometry in the Real-World 
+### 2D Lidar Odometry with Iterative Closest Point (ICP) Algorithm
+
+Building 2D Lidar odometry Map using ICP algorithm to compute relative pose of a robot in a 2D plane by aligning consecutive Lidar scans through an unknown correspondence ICP approach, creating an accurate map of the robot's path by aggregating transformations
+
+---
 
 
+### Prerequisites
+- **C++17 or higher**: Required for modern C++ features.
+- **Eigen**: Linear algebra library for matrix operations.
+- **Open3D**: For visualization of 2D point clouds.
+- **CMake**: For building the project.
 
-# Lidar Odometry Project
+### Installation
+1. Clone the repository and navigate to its root directory.
+2. Build the project using CMake:
+   ```bash
+   cmake -Bbuild
+   cmake --build build
+   ```
+3. Run the main program with the following command:
+   ```bash
+   .build/main data/
+   ```
+---
+first scan of 2D lidar dat will look as 
 
-calculate motion by indentation and pose by aggregation 
-## Table of Contents
+![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
+## Methodology
 
-- Load data
-- find nearest neighbors
-- check correspondences
-- compute transformations
-- accumulate transformation for consecutive scans
+### Point Cloud Preprocessing
 
+1. **Downsampling**: 
+2. **Grid Mapping**:
 
-## Introduction
+### Iterative Closest Point (ICP) Algorithm
 
-This project aims to implement 2D Lidar Odometry using C++. Lidar data is stored in binary files (.bin).
+The ICP algorithm aligns two consecutive scans to estimate the robot's movement and build its trajectory. This is implemented in the following steps:
 
-## Setup
+1. **Unknown Correspondence ICP** 
+2. **Nearest Neighbor Search** 
+3. **Transformation Calculation**
+   - **Covariance Matrix Calculation** 
+   - **SVD Decomposition** 
+4. **Error Calculation** 
+5. **Iteration** 
 
-To run this project, you will need:
+### Point Cloud Transformation
 
-- C++ compiler (supporting C++17)
-- Eigen library for linear algebra operations
-- Open3D library for 3D visualization
+1. **Applying Transformation**: transformation (rotation and translation) is applied to the source point cloud, aligning it to the target point cloud.
+2. **Concatenation**: After each alignment, the newly transformed point cloud is concatenated with the cumulative point cloud to build map
+---
 
-```
-./build/main data
-```
-first scan of 2D lidar dat will look as ![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
-
-
+###  Output:
+1. **Initial Point Cloud**
+2. **Accumulated Map**
+   ![2d map](https://github.com/prasanna1511/2D-Lidar-Odometry/blob/main/FinalProject/Screenshot%20from%202024-10-31%2011-52-16.png)
+---
 
 ## Author
 
 - Prasanna.Bijja
-- GitHub: [Prasanna](https://github.com/prasanna1511)
-
 
 ## Contributors
 
