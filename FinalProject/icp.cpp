@@ -1,183 +1,178 @@
-#include "icp.hpp"
+#include <algorithm>
 #include <cmath>
 #include <limits>
-#include <iostream>
+#include "icp.hpp"
+#include <open3d/Open3D.h>
+#include <open3d/core/ShapeUtil.h>
+#include <utility>
+
+
+namespace {
+
+    Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &coords) {
+        Eigen::Vector2d sum = Eigen::Vector2d::Zero();
+        for (const auto &point : coords) {
+            sum += point;
+        }
+        return sum /coords.size();
+    }
+
+    Eigen::Matrix2d computeCovariance(const std::vector<Eigen::Vector2d> &src, const std::vector<Eigen::Vector2d> &target) {
+        Eigen ::Vector2d srcMean = centroid(src);
+        Eigen::Vector2d targetMean = centroid(target);
+        Eigen::Matrix2d cov = Eigen::Matrix2d::Zero();
+        for (size_t i = 0; i < src.size(); i++) {
+            cov += (target[i] - targetMean) * (src[i] - srcMean).transpose();
+        }
+        return cov;
+    }
+
+    std::vector<Eigen::Vector2d> applyTransformation(const Eigen::Matrix3d &transformation, std::vector<Eigen::Vector2d> &coords) {
+        Eigen::Matrix2d rotation = transformation.block<2, 2>(0, 0);
+        Eigen::Vector2d translation = transformation.block<2, 1>(0, 2);
+
+        std::transform(coords.cbegin(), coords.cend(), coords.begin(), [&rotation, &translation](const auto &p) {
+            return rotation * p + translation;
+        });
+        return coords;
+    }
+
+    double calculateError(const std::vector<Eigen::Vector2d> &src, const std::vector<Eigen::Vector2d> &target) {
+        double error = 0.0;
+        for (size_t i = 0; i < src.size(); i++) {
+            error += (target[i] - src[i]).squaredNorm();
+        }
+        return error;
+    }
+
+    std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> createGridMap(const std::vector<Eigen::Vector2d> &coords, const double &pixelSize) {
+        std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> grid;
+        for (const Eigen::Vector2d &point : coords) {
+            const Pixel p(point, pixelSize);
+            grid[p].push_back(point);
+        }
+        return grid;
+    }
+
+    std::vector<Pixel> findNeighbourPixels(const Pixel &p, const int range = 1) {
+        std::vector<Pixel> neighbourPixels;
+        neighbourPixels.reserve(9);
+        for (int x = p.i - range; x <= p.i + range; x++) {
+            for (int y = p.j - range; y <= p.j + range; y++) {
+                neighbourPixels.emplace_back(x, y);
+            }
+        }
+        return neighbourPixels;
+    }
+
+    std::vector<Eigen::Vector2d> getPixelPoints(const std::vector<Pixel> &pixels, const std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> &targetGrid) {
+        std::vector<Eigen::Vector2d> points;
+        for (const auto &pixel : pixels) {
+            const auto it = targetGrid.find(pixel);
+            if (it != targetGrid.end()) {
+                points.insert(points.end(), it->second.begin(), it->second.end());
+            }
+        }
+        return points;
+    }
+
+    std::tuple<std::vector<Eigen::Vector2d>, std::vector<Eigen::Vector2d>> findNearestNeighbours(const std::vector<Eigen::Vector2d> &src, const std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> &targetGrid, const double &pixelSize) {
+        std::vector<Eigen::Vector2d> srcCorrespondences, targetCorrespondences;
+        srcCorrespondences.reserve(src.size());
+        targetCorrespondences.reserve(src.size());
+
+        for (const Eigen::Vector2d &point : src) {
+            const Pixel p(point, pixelSize);
+            const std::vector<Pixel> &neighbours = findNeighbourPixels(p, 1);
+            const std::vector<Eigen::Vector2d> &potentialPoints = getPixelPoints(neighbours, targetGrid);
+
+            if (potentialPoints.empty()) continue;
+
+            double minDist = std::numeric_limits<double>::infinity();
+            Eigen::Vector2d closestPoint = Eigen::Vector2d::Zero();
+
+            for (const Eigen::Vector2d &candidate : potentialPoints) {
+                double dist = (point - candidate).norm();
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestPoint = candidate;
+                }
+            }
+            srcCorrespondences.push_back(point);
+            targetCorrespondences.push_back(closestPoint);
+        }
+        return std::make_tuple(srcCorrespondences, targetCorrespondences);
+    }
+
+    
+    Eigen::Matrix3d computeIcpKnownCorrespondence(std::vector<Eigen::Vector2d> src, const std::vector<Eigen::Vector2d> &target) {
+
+    const Eigen::Vector2d &srcMean = centroid(src);
+    const Eigen::Vector2d &targetMean = centroid(target);
+    Eigen::Matrix2d covariance = computeCovariance(src, target);
+
+    Eigen::JacobiSVD<Eigen::Matrix2d> svd(covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix2d rotation = svd.matrixU() * svd.matrixV().transpose();
+    Eigen::Vector2d translation = targetMean - rotation * srcMean;
+
+    Eigen::Matrix3d transformation = Eigen::Matrix3d::Identity();
+    transformation.block<2, 2>(0, 0) = rotation;
+    transformation.block<2, 1>(0, 2) = translation;
+
+   
+
+    return transformation;
+}
+
+} // namespace
 
 namespace icp {
 
-std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> GridMap(const std::vector<Eigen::Vector2d> &coords, double pixel_size) {
-    std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> grid_map;
-    for (const auto &coord : coords) {
-        Pixel p(static_cast<int>(coord.x() / pixel_size), static_cast<int>(coord.y() / pixel_size));
-        grid_map[p].push_back(coord);
-    }
-    return grid_map;
-}
 
-std::vector<Eigen::Vector2d> downsample(const std::vector<Eigen::Vector2d> &coords, double voxel_size) {
-    std::unordered_map<Pixel, Eigen::Vector2d, PixelHash> downSample_map;
-    for (const auto &coord : coords) {
-        int x = std::floor(coord.x() / voxel_size);
-        int y = std::floor(coord.y() / voxel_size);
-        Pixel p(x, y);
-        downSample_map[p] = coord;
-    }
-    std::vector<Eigen::Vector2d> downsampled_coords;
-    for (const auto &entry : downSample_map) {
-        downsampled_coords.push_back(entry.second);
-    }
-    return downsampled_coords;
-}
+    void icpUnknownCorrespondence(std::vector<Eigen::Vector2d> &src,
+                                              const std::vector<Eigen::Vector2d> &target,
+                                              const double &pixelSize) {
+        int maxIterations = 15;  
+        double oldError = std::numeric_limits<double>::infinity(); 
+        Eigen::Matrix3d totalTransformation = Eigen::Matrix3d::Identity(); 
 
-std::tuple<std::vector<Eigen::Vector2d>, std::vector<Eigen::Vector2d>> nearestNeighbor(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target) {
-    std::vector<Eigen::Vector2d> nearneigh_source;
-    std::vector<Eigen::Vector2d> nearneigh_target;
-    for (const auto &coord : source) {
-        double min_dist = std::numeric_limits<double>::max();
-        Eigen::Vector2d nearest_point;
-        for (const auto &target_coord : target) {
-            double dist = (coord - target_coord).norm();
-            if (dist < min_dist) {
-                min_dist = dist;
-                nearest_point = target_coord;
+        std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> targetGrid = createGridMap(target, pixelSize);
+
+        for (int iter = 0; iter < maxIterations; iter++) {
+            auto [srcCorrespondences, targetCorrespondences] = findNearestNeighbours(src, targetGrid, pixelSize);
+            Eigen::Matrix3d transformation = computeIcpKnownCorrespondence(srcCorrespondences, targetCorrespondences);
+
+            src = applyTransformation(transformation, src);
+
+            totalTransformation = transformation * totalTransformation;
+
+            double error = calculateError(src, target);
+           
+            if (std::abs(oldError - error) < 1e-6) {
+                break;
+            }
+            oldError = error;
+        }
+    }
+
+    std::vector<Eigen::Vector2d> concatenatePointClouds(std::vector<Eigen::Vector2d> &leftCloud, const std::vector<Eigen::Vector2d> &rightCloud) {
+        leftCloud.reserve(leftCloud.size() + rightCloud.size());
+        leftCloud.insert(leftCloud.end(), rightCloud.begin(), rightCloud.end());
+        return leftCloud;
+    }
+
+    std::vector<Eigen::Vector2d> downsamplePointCloud(const std::vector<Eigen::Vector2d> &coords, const double &pixelSize, const int &maxPoints) {
+        std::vector<Eigen::Vector2d> filteredPoints;
+        std::unordered_map<Pixel, int> pixelMap;
+
+        for (const Eigen::Vector2d &point : coords) {
+            const Pixel p(point, pixelSize);
+            if (pixelMap[p] < maxPoints) {
+                pixelMap[p]++;
+                filteredPoints.push_back(point);
             }
         }
-        nearneigh_source.push_back(coord);
-        nearneigh_target.push_back(nearest_point);
+        return filteredPoints;
     }
-    return std::make_tuple(nearneigh_source, nearneigh_target);
-}
-
-Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &coords) {
-    Eigen::Vector2d sum = Eigen::Vector2d::Zero();
-    for (const auto &coord : coords) {
-        sum += coord;
-    }
-    return sum / coords.size();
-}
-
-Eigen::Matrix2d Covariance(const PointCloud &source, const PointCloud &target) {
-    Eigen::Vector2d mean_source = centroid(source);
-    Eigen::Vector2d mean_target = centroid(target);
-    Eigen::Matrix2d cov = Eigen::Matrix2d::Zero();
-    for (size_t i = 0; i < source.size(); i++) {
-        cov += (source[i] - mean_source) * (target[i] - mean_target).transpose();
-    }
-    return cov / source.size();
-}
-
-Eigen::Matrix2d R(const Eigen::Matrix2d &cov) {
-    Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::Matrix2d U = svd.matrixU();
-    Eigen::Matrix2d V = svd.matrixV();
-    Eigen::Matrix2d R = V * U.transpose();
-    if (R.determinant() < 0) {
-        V.col(1) *= -1;
-        R = V * U.transpose();
-    }
-    return R;
-}
-
-Eigen::Matrix3d icp_known_correspondence(const std::vector<Eigen::Vector2d> &s_correspondences, const std::vector<Eigen::Vector2d> &t_correspondences) {
-    Eigen::Vector2d centroid_source = centroid(s_correspondences);
-    Eigen::Vector2d centroid_target = centroid(t_correspondences);
-
-    Eigen::Matrix2d cov = Covariance(s_correspondences, t_correspondences);
-    Eigen::Matrix2d R_mat = R(cov);
-    Eigen::Vector2d t_vec = centroid_target - R_mat * centroid_source;
-
-    Eigen::Matrix3d T = Eigen::Matrix3d::Identity();
-    T.block<2,2>(0,0) = R_mat;
-    T.block<2,1>(0,2) = t_vec;
-
-    return T;
-}
-
-Eigen::Matrix3d icp_unknown_correspondence(const std::vector<Eigen::Vector2d> &src_, const std::vector<Eigen::Vector2d> &target, const double &pixel_size) {
-    int max_iterations = 50;
-    int iter = 0;
-    double old_err = INFINITY;
-
-    std::vector<Eigen::Vector2d> src = src_;
-    Eigen::Matrix3d T = Eigen::Matrix3d::Identity();
-    Eigen::Matrix3d t = Eigen::Matrix3d::Identity();
-
-    std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> target_grid = GridMap(target, pixel_size);
-
-    while (true) {
-        iter++;
-        auto [s_correspondences, t_correspondences] = nearestNeighbor(src, target);
-        t = icp_known_correspondence(s_correspondences, t_correspondences);
-
-        if (iter == 1) {
-            T = t;
-        } else {
-            T = t * T;
-        }
-
-        src = apply_transformation(t, src);
-
-        double err = Error(src, target, t);
-        if (iter == max_iterations || err == old_err) {
-            break;
-        }
-
-        old_err = err;
-
-        // Clear the correspondences
-        s_correspondences.clear();
-        t_correspondences.clear();
-    }
-
-    // Apply final transformation to the entire target scan and extract x, y points
-    std::vector<Eigen::Vector2d> transformed_points = apply_transformation(T, target);
-
-    // Clear transformed points after appending to cumulative pointcloud
-    transformed_points.clear();
-
-    return T;
-}
-
-std::vector<Eigen::Vector2d> apply_transformation(const Eigen::Matrix3d &transformation, const std::vector<Eigen::Vector2d> &src) {
-    std::vector<Eigen::Vector2d> transformed_points;
-    Eigen::Matrix2d R = transformation.block<2, 2>(0, 0);
-    Eigen::Vector2d t = transformation.block<2, 1>(0, 2);
-
-    for (const auto &point : src) {
-        transformed_points.emplace_back(R * point + t);
-    }
-
-    return transformed_points;
-}
-
-std::vector<Eigen::Vector2d> concat_pointclouds(std::vector<Eigen::Vector2d> &first, const std::vector<Eigen::Vector2d> &second) {
-    std::vector<Eigen::Vector2d> result = first;
-    result.insert(result.end(), second.begin(), second.end());
-    return result;
-}
-
-double Error(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target, const Eigen::Matrix3d &T) {
-    double error = 0;
-    Eigen::Matrix2d R = T.block<2,2>(0,0);
-    Eigen::Vector2d t = T.block<2,1>(0,2);
-    for (size_t i = 0; i < source.size(); i++) {
-        error += (target[i] - R * source[i] - t).norm();
-    }
-    return error / source.size();
-}
-
-Eigen::MatrixXd Jacobian(const Eigen::Vector2d &p, const Eigen::Vector2d &q, const Eigen::Matrix3d &T) {
-    Eigen::Vector2d rp = (T.block<2,2>(0,0) * p + T.block<2,1>(0,2));
-
-    Eigen::MatrixXd J(2, 3);
-    J(0, 0) = 1;
-    J(0, 1) = 0;
-    J(0, 2) = -rp.y();
-    J(1, 0) = 0;
-    J(1, 1) = 1;
-    J(1, 2) = rp.x();
-
-    return J;
-}
 
 } // namespace icp
