@@ -4,36 +4,63 @@
 #include <Eigen/Dense>
 
 
-namespace icp {
+// Pixel struct for discretizing points based on a given pixel size
 struct Pixel {
-    int x, y;
-    Pixel(int x_, int y_) : x(x_), y(y_) {}
-    bool operator==(const Pixel &other) const {
-        return x == other.x && y == other.y;
+    Pixel(int x, int y) : i(x), j(y) {}
+
+    Pixel(const Eigen::Vector2d &point, const double &pixelSize)
+        : i(static_cast<int>(point[0] / pixelSize)),
+          j(static_cast<int>(point[1] / pixelSize)) {}
+
+    bool operator==(const Pixel &px) const {
+        return i == px.i && j == px.j;
     }
+
+    int i;
+    int j;
 };
 
-struct PixelHash {
-    std::size_t operator()(const Pixel &p) const {
-        return std::hash<int>()(p.x) ^ std::hash<int>()(p.y);
-    }
-};
+namespace std {
+    template <>
+    struct hash<Pixel> {
+        size_t operator()(const Pixel &px) const {
+            return ((1 << 20) - 1) & (px.i * 73856093 ^ px.j * 19349663);
+        }
+        Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &coords);
 
-using PointCloud = std::vector<Eigen::Vector2d>;
+        Eigen::Matrix2d computeCovariance(const std::vector<Eigen::Vector2d> &src, const std::vector<Eigen::Vector2d> &target); 
 
-// Function declarations
-std::unordered_map<Pixel, std::vector<Eigen::Vector2d>, PixelHash> GridMap(const std::vector<Eigen::Vector2d> &coords, double pixel_size);
-std::vector<Eigen::Vector2d> downsample(const std::vector<Eigen::Vector2d> &coords, double voxel_size);
-std::tuple<std::vector<Eigen::Vector2d>, std::vector<Eigen::Vector2d>> nearestNeighbor(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target);
-Eigen::Vector2d centroid(const std::vector<Eigen::Vector2d> &coords);
-Eigen::Matrix2d Covariance(const PointCloud &source, const PointCloud &target);
-Eigen::Matrix2d R(const Eigen::Matrix2d &cov);
-Eigen::Matrix3d icp_known_correspondence(const std::vector<Eigen::Vector2d> &s_correspondences, const std::vector<Eigen::Vector2d> &t_correspondences);
-Eigen::Matrix3d icp_unknown_correspondence(const std::vector<Eigen::Vector2d> &src_, const std::vector<Eigen::Vector2d> &target, const double &pixel_size);
-std::vector<Eigen::Vector2d> apply_transformation(const Eigen::Matrix3d &transformation, const std::vector<Eigen::Vector2d> &src);
-std::vector<Eigen::Vector2d> concat_pointclouds(std::vector<Eigen::Vector2d> &first, const std::vector<Eigen::Vector2d> &second);
-std::vector<Eigen::Vector2d> downsample(const std::vector<Eigen::Vector2d> &vec, const double &pixel_size, const int &n_points);
-double Error(const std::vector<Eigen::Vector2d> &source, const std::vector<Eigen::Vector2d> &target, const Eigen::Matrix3d &T);
-Eigen::MatrixXd Jacobian(const Eigen::Vector2d &p, const Eigen::Vector2d &q, const Eigen::Matrix3d &T);
+        std::vector<Eigen::Vector2d> applyTransformation(const Eigen::Matrix3d &transformation, std::vector<Eigen::Vector2d> &coords);
+
+        double calculateError(const std::vector<Eigen::Vector2d> &src, const std::vector<Eigen::Vector2d> &target);
+
+        std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> createGridMap(const std::vector<Eigen::Vector2d> &coords, const double &pixelSize);
+
+        std::vector<Pixel> findNeighbourPixels(const Pixel &p, const int range = 1);
+
+        std::vector<Eigen::Vector2d> getPixelPoints(const std::vector<Pixel> &pixels, const std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> &targetGrid);
+
+        std::tuple<std::vector<Eigen::Vector2d>, std::vector<Eigen::Vector2d>> findNearestNeighbours(const std::vector<Eigen::Vector2d> &src, const std::unordered_map<Pixel, std::vector<Eigen::Vector2d>> &targetGrid, const double &pixelSize);
+        
+        Eigen::Matrix3d computeIcpKnownCorrespondence(std::vector<Eigen::Vector2d> src, const std::vector<Eigen::Vector2d> &target);
+  
+    };
+} // namespace std
+
+namespace icp {
+
+ 
+    void icpUnknownCorrespondence(std::vector<Eigen::Vector2d> &src,
+                                              const std::vector<Eigen::Vector2d> &target,
+                                              const double &pixelSize
+                                              );
+
+    std::vector<Eigen::Vector2d> extractTrajectoryPoints(const std::vector<Eigen::Matrix3d> &trajectory);
+
+    std::vector<Eigen::Vector2d> concatenatePointClouds(std::vector<Eigen::Vector2d> &leftCloud,
+                                                        const std::vector<Eigen::Vector2d> &rightCloud);
+
+    std::vector<Eigen::Vector2d> downsamplePointCloud(const std::vector<Eigen::Vector2d> &coords,
+                                                      const double &pixelSize, const int &maxPoints);
 
 } // namespace icp
