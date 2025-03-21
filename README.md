@@ -1,22 +1,8 @@
 # C++ Project: 2D Lidar odometry in the Real-World 
 
-## Introduction
-
-To build 2D Odometry map 
-
-single pointcloud ![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
-
-## Steps
-
-- find correspondences
-- compute TRansformations for the correspondences(rotation,translation)
-- apply the transformations to the target scan
-- extract the transformed poins
-- accumulate the transformed points, by applying icp for consecutive scans
-
 ### 2D Lidar Odometry with Iterative Closest Point (ICP) Algorithm
 
-Building 2D Lidar odometry Map using ICP algorithm to compute relative pose of a robot in a 2D plane by aligning consecutive Lidar scans through an unknown correspondence ICP
+- Building 2D Lidar odometry Map using ICP algorithm to compute relative pose of a robot in a 2D plane by aligning consecutive Lidar scans through an unknown correspondence ICP
 ---
 
 ### Prerequisites
