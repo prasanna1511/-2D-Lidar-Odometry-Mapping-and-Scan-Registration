@@ -1,17 +1,17 @@
-# C++ Project: 2D Lidar odometry in the Real-World 
+# 2D Lidar-Odometry Mapping and Scan Registration
 
-### 2D Lidar Odometry with Iterative Closest Point (ICP) Algorithm
+This C++ project implements a robust 2D mapping pipeline using Lidar and odometry data. It leverages the Iterative Closest Point (ICP) algorithm for scan registration and accumulates aligned point clouds into a global map. The result is a high-quality 2D map suitable for robotics and navigation applications.
 
-- Building 2D Lidar odometry Map using ICP algorithm to compute relative pose of a robot in a 2D plane by aligning consecutive Lidar scans through an unknown correspondence ICP
----
+## Features
 
-### Prerequisites
-- **C++17 or higher**: Required for modern C++ features.
-- **Eigen**: Linear algebra library for matrix operations.
-- **Open3D**: For visualization of 2D point clouds.
-- **CMake**: For building the project.
+- Reads and preprocesses 2D Lidar scan data
+- Registers consecutive scans using the ICP algorithm
+- Accumulates registered scans into a global map
+- Outputs both the initial scan and the constructed 2D map
+- Modular CMake-based build system
 
-### Installation
+## Installation
+
 1. Clone the repository and navigate to its root directory.
 2. Build the project using CMake:
    ```bash
@@ -20,49 +20,36 @@
    ```
 3. Run the main program with the following command:
    ```bash
-   .build/main data/
+   ./build/main data/
    ```
----
-first scan of 2D lidar dat will look as 
 
-![ScreenCapture_2024-07-01-15-37-39](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
 ## Methodology
 
 ### Point Cloud Preprocessing
-
-1. **Downsampling**: 
-2. **Grid Mapping**:
+Lidar scan data is read and filtered to remove outliers and noise before registration.
 
 ### Iterative Closest Point (ICP) Algorithm
+The ICP algorithm aligns each new scan to the previously accumulated map, estimating the relative transformation.
 
-The ICP algorithm aligns two consecutive scans to estimate the robot's movement and build its trajectory. This is implemented in the following steps:
+### Point Cloud Transformation and Accumulation
+Aligned scans are transformed and merged to incrementally build a global 2D map.
 
-1. **Unknown Correspondence ICP** 
-2. **Nearest Neighbor Search** 
-3. **Transformation Calculation**
-   - **Covariance Matrix Calculation** 
-   - **SVD Decomposition** 
-4. **Error Calculation** 
-5. **Iteration** 
+## Output
 
-### Point Cloud Transformation
+1. **Single Point Cloud**
 
-1. **Applying Transformation**: transformation (rotation and translation) is applied to the source point cloud, aligning it to the target point cloud.
-2. **Concatenation**: After each alignment, the newly transformed point cloud is concatenated with the cumulative point cloud to build map
----
-
-###  Output:
-1. **Initial Point Cloud**
+    ![First scan](https://github.com/prasanna1511/2D-Lidar-Odometry/assets/53254596/4deb6fae-0451-40b2-b16b-c516c7d5a993)
 2. **Accumulated Map**
-   ![2d map](https://github.com/prasanna1511/2D-Lidar-Odometry/blob/main/FinalProject/Screenshot%20from%202024-10-31%2011-52-16.png)
----
+
+    ![2d map](https://github.com/prasanna1511/2D-Lidar-Odometry/blob/main/FinalProject/Screenshot%20from%202024-10-31%2011-52-16.png)
+
+## Author
+
+- Prasanna Bijja
+
 ## Contributors
 
 - tizianoGuadagnino
 - saurabh1002
 
 ---
-## Author
-
-- Prasanna.Bijja
-
